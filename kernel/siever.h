@@ -503,6 +503,14 @@ public:
     // The parameter alpha has the same meaning as in bgj1.
     void gauss_triple_mt(double alpha); // in triple_sieve_mt.cpp
 
+
+/**
+    CVPP
+**/
+    FT iterative_slice( std::array<LFT,MAX_SIEVING_DIM>& t_yr, size_t max_entries_used=0 );
+    void randomize_target(std::array<LFT, MAX_SIEVING_DIM>& t_yr, size_t k );
+    void randomized_iterative_slice( float* t_yr, size_t max_entries_used=0, size_t samples=1 );
+
 /**
     Retrieving data about the sieve:
     TODO: Document!!!
