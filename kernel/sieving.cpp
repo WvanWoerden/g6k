@@ -365,7 +365,9 @@ FT Siever::iterative_slice( std::array<LFT,MAX_SIEVING_DIM>& t_yr, size_t max_en
 
         // find best reduction
         int besti = -1;
+        LFT bestk = 0;
         FT bestl = target_len;
+
         for (size_t j = 0; j < max_entries_used; ++j)
         {     
             // ADD POPCOUNT HERE
@@ -373,26 +375,34 @@ FT Siever::iterative_slice( std::array<LFT,MAX_SIEVING_DIM>& t_yr, size_t max_en
             int index = fast_cdb[j].i;
             LFT const inner = std::inner_product(t_yr.begin(), t_yr.begin()+n, db[index].yr.begin(),  static_cast<LFT>(0.));
 
-            // Test for reduction while bucketing.
-            LFT const new_l = target_len + fast_cdb[j].len - 2 * std::abs(inner);
-            if (UNLIKELY(new_l < bestl))
-            {   
-                bestl = new_l;
-                besti = index;
+            // integer k minimises the length of ||u - k * v|| for u, v the vectors represented by t_yr, db[index].yr resp
+            LFT k = inner/fast_cdb[j].len;
+
+            // unfortunately std::round rounds _away_ from 0
+            if (k <= 0.5 && k >= -0.5) {
+                k = 0;
+            } else {
+                k = std::round(k);
+            }
+
+            LFT new_l;
+            if (UNLIKELY(k != 0.)) {
+                new_l = target_len + fast_cdb[j].len - 2 * k * inner;
+                if (UNLIKELY(new_l < bestl)) {
+                    besti = index;
+                    bestk = k;
+                    bestl = new_l;
+                }
             }
         }
 
-        if( besti >= 0 ) {
+        if (besti >= 0) {
             reduced = true;
-            int index = besti;
-            LFT const inner = std::inner_product(t_yr.begin(), t_yr.begin()+n, db[index].yr.begin(),  static_cast<LFT>(0.));
-
-            int const sign = inner < 0 ? 1 : -1;
-            addmul_vec(t_yr,  db[index].yr, static_cast<LFT>(sign));
+            addmul_vec(t_yr,  db[besti].yr, bestk);
 
             // recalculate length for precision
             target_len = 0;
-            for( size_t i = 0; i < n; i++ ) {
+            for (size_t i = 0; i < n; i++) {
                 target_len += t_yr[i] * t_yr[i];
             }
         }
